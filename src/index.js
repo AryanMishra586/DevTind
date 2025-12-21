@@ -3,16 +3,26 @@ const express= require("express")
 const app=express()
 
 
-app.use("/test",(req,res)=>{
-    res.send("Kya re madharjaat")
+app.get("/user/:id",(req,res)=>{
+    console.log(req.params)
+    console.log(req.query)
+    res.send("Here is user info")
 })
 
-app.use("/hello",(req,res)=>{
-    res.send("hello ji")
+app.post("/user",(req,res)=>{
+    res.send("Data saved succesfully")
 })
 
-app.use("/",(req,res)=>{
-    res.send("lund le le")
+app.put("/user",(req,res)=>{
+    res.send("Data updated")
+})
+
+app.delete("/user",(req,res)=>{
+    res.send("Data deleted")
+})
+
+app.patch("/user",(req,res)=>{
+    res.send("Data updated diffrently")
 })
 
 app.listen(3000,()=>{
