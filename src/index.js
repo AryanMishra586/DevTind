@@ -2,42 +2,108 @@ const express= require("express")
 
 const app=express()
 
-const {userauth,adminauth}= require("./middlewares/auth.js")
+const {connectDb}= require("./config/database.js")
 
-app.use("/admin",adminauth)
+const {User} =require("./models/user.js")
 
-app.post("/user/login",(req,res)=>{
-    res.send("logged in")
+app.use(express.json())
+
+app.post("/signup", async (req,res)=>{
+
+    try{
+        const user= new User(req.body);
+        await user.save();
+        res.send("Data saved")
+    }
+    catch(err){
+        res.status(500).send("Data not saved")
+    }
 })
 
-app.get("/user",userauth,(req,res)=>{
-    res.send("Here is user info")
+app.get("/getUser",async (req,res)=>{
+    try{
+        const user = await User.find({
+            email : req.body.email
+        })
+        if(user.length){
+            res.send(user)
+        }
+        else{
+            res.status(404).send("User not found")
+        }
+    }
+    catch(err){
+        res.status(500).send("Something went wrong")
+    }
 })
 
-app.get("/admin/read",(req,res)=>{
-    res.send("Hello admin")
+app.get("/getUserById",async (req,res)=>{
+    try{
+        const user = await User.find({
+            _id : req.body._id
+        })
+        if(user.length){
+            res.send(user)
+        }
+        else{
+            res.status(404).send("User not found")
+        }
+    }
+    catch(err){
+        res.status(500).send("Something went wrong")
+    }
 })
 
-app.post("/admin/putu",(req,res)=>{
-    res.send("Naughty admin")
+app.get("/feed", async (req,res)=>{
+    try{
+        const users = await User.find({})
+        if(users.length){
+            res.send(users)
+        }
+        else{
+            res.status(404).send("No User found")
+        }
+    }
+    catch(err){
+        res.status(500).send("Something went wrong")
+    }
 })
 
-app.post("/user",(req,res)=>{
-    res.send("Data saved succesfully")
+app.patch("/updateUser", async(req,res)=>{
+    try{
+        const userid=req.body.userid;
+        await User.findByIdAndUpdate(userid,req.body)
+        const ch=await User.findById(userid)
+        res.send(ch);
+    }
+    catch(err){
+        res.status(500).send("Something went wrong")
+    }
 })
 
-app.put("/user",(req,res)=>{
-    res.send("Data updated")
+app.patch("/updateUserByEmail", async(req,res)=>{
+    try{
+        const updatedUser= await User.findOneAndUpdate({email : req.body.email},req.body,{new : true})
+
+        if(updatedUser){
+            res.send(updatedUser)
+        }
+        else{
+            res.status(404).send("User not found")
+        }
+    }
+    catch(err){
+        res.status(500).send("Something went wrong")
+    }
 })
 
-app.delete("/user",(req,res)=>{
-    res.send("Data deleted")
-})
+connectDb().then(()=>{
+    console.log("Database Successfully connected");
 
-app.patch("/user",(req,res)=>{
-    res.send("Data updated diffrently")
-})
-
-app.listen(3000,()=>{
+    app.listen(3000,()=>{
     console.log("Server is running on port 3000");
+    })
+
+}).catch((err)=>{
+    console.log("DB not connected");
 })
