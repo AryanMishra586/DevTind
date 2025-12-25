@@ -16,7 +16,7 @@ app.post("/signup", async (req,res)=>{
         res.send("Data saved")
     }
     catch(err){
-        res.status(500).send("Data not saved")
+        res.status(500).send("Data not saved "+ err.message)
     }
 })
 
@@ -72,7 +72,7 @@ app.get("/feed", async (req,res)=>{
 app.patch("/updateUser", async(req,res)=>{
     try{
         const userid=req.body.userid;
-        await User.findByIdAndUpdate(userid,req.body)
+        await User.findByIdAndUpdate(userid,req.body,{runValidators : true})
         const ch=await User.findById(userid)
         res.send(ch);
     }
@@ -83,7 +83,7 @@ app.patch("/updateUser", async(req,res)=>{
 
 app.patch("/updateUserByEmail", async(req,res)=>{
     try{
-        const updatedUser= await User.findOneAndUpdate({email : req.body.email},req.body,{new : true})
+        const updatedUser= await User.findOneAndUpdate({email : req.body.email},req.body,{new : true, runValidators : true})
 
         if(updatedUser){
             res.send(updatedUser)
@@ -93,7 +93,7 @@ app.patch("/updateUserByEmail", async(req,res)=>{
         }
     }
     catch(err){
-        res.status(500).send("Something went wrong")
+        res.status(500).send("Something went wrong "+ err.message)
     }
 })
 
