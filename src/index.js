@@ -11,7 +11,13 @@ app.use(express.json())
 app.post("/signup", async (req,res)=>{
 
     try{
-        const user= new User(req.body);
+        const skl=[... new Set(req.body?.skills)]
+        if(skl.length>10){
+            res.status(405).send("No many skills added")
+        }
+        const bd=req.body;
+        bd.skills=skl;
+        const user= new User(bd);
         await user.save();
         res.send("Data saved")
     }
@@ -71,19 +77,48 @@ app.get("/feed", async (req,res)=>{
 
 app.patch("/updateUser", async(req,res)=>{
     try{
+        const updateAllowed =["age","gender","about","userid","skills"]
+        for(const k of Object.keys(req.body)){
+            if(!updateAllowed.includes(k)){
+                return res.status(405).send("Update to given filed is not allowed "+k);
+            }
+        }
+        let bd=req.body
+        let skl=Array.isArray(bd.skills) ? bd.skills:[];
+        if(skl.length>0)
+        skl=[...new Set(skl)];
+        if(skl.length>10){
+            return res.status(400).send("Too many skills included");
+        }
+        bd.skills=skl;
         const userid=req.body.userid;
-        await User.findByIdAndUpdate(userid,req.body,{runValidators : true})
+        await User.findByIdAndUpdate(userid,bd,{runValidators : true})
         const ch=await User.findById(userid)
-        res.send(ch);
+        return res.send(ch);
     }
     catch(err){
-        res.status(500).send("Something went wrong")
+        res.status(500).send("Something went wrong "+ err.message)
     }
 })
 
 app.patch("/updateUserByEmail", async(req,res)=>{
     try{
-        const updatedUser= await User.findOneAndUpdate({email : req.body.email},req.body,{new : true, runValidators : true})
+        const updateAllowed =["age","gender","about","email","skills"]
+        for(const k of Object.keys(req.body)){
+            if(!updateAllowed.includes(k)){
+                return res.status(405).send("Update to given filed is not allowed "+k);
+            }
+        }
+        let bd=req.body
+        let skl=Array.isArray(bd.skills) ? bd.skills:[];
+        if(skl.length>0)
+        skl= [...new Set(req.body?.skills)]
+        if(skl.length>10){
+            res.status(400).send("Too many skills included");
+        }
+        bd.skills=skl;
+
+        const updatedUser= await User.findOneAndUpdate({email : req.body.email},bd,{new : true, runValidators : true})
 
         if(updatedUser){
             res.send(updatedUser)

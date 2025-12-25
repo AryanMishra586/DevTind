@@ -1,12 +1,15 @@
 const mongoose = require("mongoose")
+const validator = require('validator');
 
 const userSchema= new mongoose.Schema({
     firstName : {
         type: String,
         required : true,
+        maxLength:50,
     },
     lastName : {
-        type: String
+        type: String,
+        maxLength : 50,
     },
     email : {
         type : String,
@@ -14,6 +17,11 @@ const userSchema= new mongoose.Schema({
         trim : true,
         unique : true,
         lowercase : true,
+        validate(v){
+            if(!validator.isEmail(v)){
+                throw new error("Enter a valid email "+ v);
+            }
+        },
     },
     age : {
         type : Number,
@@ -38,7 +46,8 @@ const userSchema= new mongoose.Schema({
     },
     about : {
         type : String,
-        default : "No about added"
+        default : "No about added",
+        maxLength : 100,
     },
     skills : {
         type : [String],
