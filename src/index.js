@@ -12,7 +12,13 @@ const bcrypt = require("bcrypt")
 
 const validator = require("validator")
 
+const jwt = require("jsonwebtoken");
+
+const cookieParser = require("cookie-parser")
+
+
 app.use(express.json())
+app.use(cookieParser())
 
 app.post("/signup", async (req,res)=>{
 
@@ -149,7 +155,26 @@ app.post("/login", async (req,res)=>{
         if(!passwordCheck){
             throw new Error("Enter valid credentials");
         }
+        const token = jwt.sign({userid : user._id},"MeraNaamAryan@123")
+        res.cookie("token",token);
         return res.send("User logged in successfully")
+    }
+    catch(err){
+        res.status(404).send(err.message);
+    }
+})
+
+app.get("/profile", async(req,res)=>{
+    try{
+        const cookies= req.cookies;
+        if(!cookies){
+            throw new Error("Invalid cookie");
+        }
+        const {token}=cookies;
+        const decoded = jwt.verify(token,"MeraNaamAryan@123")
+        const {userid} = decoded;
+        const user= await User.findById(userid);
+        res.send(user)
     }
     catch(err){
         res.status(404).send(err.message);
