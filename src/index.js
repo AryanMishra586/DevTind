@@ -6,18 +6,29 @@ const {connectDb}= require("./config/database.js")
 
 const {User} =require("./models/user.js")
 
+const {skillsCheck} = require("./utils/skillsCheck.js")
+
+const bcrypt = require("bcrypt")
+
+const validator = require("validator")
+
 app.use(express.json())
 
 app.post("/signup", async (req,res)=>{
 
     try{
-        const skl=[... new Set(req.body?.skills)]
-        if(skl.length>10){
-            res.status(405).send("No many skills added")
+        let bd=req.body;
+        const {firstName,lastName,password,email} = bd;
+        if(!validator.isStrongPassword(password)){
+            return res.status(400).send("Enter a strong password")
         }
-        const bd=req.body;
-        bd.skills=skl;
-        const user= new User(bd);
+        const npassword = await bcrypt.hash(password,10);
+        const user= new User({
+            firstName,
+            lastName,
+            email,
+            password:npassword
+        });
         await user.save();
         res.send("Data saved")
     }
@@ -84,13 +95,9 @@ app.patch("/updateUser", async(req,res)=>{
             }
         }
         let bd=req.body
-        let skl=Array.isArray(bd.skills) ? bd.skills:[];
-        if(skl.length>0)
-        skl=[...new Set(skl)];
-        if(skl.length>10){
-            return res.status(400).send("Too many skills included");
+        if(!skillsCheck(req,bd)){
+            return res.status(400).send("Too many skills added")
         }
-        bd.skills=skl;
         const userid=req.body.userid;
         await User.findByIdAndUpdate(userid,bd,{runValidators : true})
         const ch=await User.findById(userid)
@@ -110,13 +117,9 @@ app.patch("/updateUserByEmail", async(req,res)=>{
             }
         }
         let bd=req.body
-        let skl=Array.isArray(bd.skills) ? bd.skills:[];
-        if(skl.length>0)
-        skl= [...new Set(req.body?.skills)]
-        if(skl.length>10){
-            res.status(400).send("Too many skills included");
+        if(!skillsCheck(req,bd)){
+            return res.status(400).send("Too many skills added")
         }
-        bd.skills=skl;
 
         const updatedUser= await User.findOneAndUpdate({email : req.body.email},bd,{new : true, runValidators : true})
 
@@ -129,6 +132,27 @@ app.patch("/updateUserByEmail", async(req,res)=>{
     }
     catch(err){
         res.status(500).send("Something went wrong "+ err.message)
+    }
+})
+
+app.post("/login", async (req,res)=>{
+    try{
+        const {emailid,password}= req.body;
+        if(!emailid||!password){
+            throw new Error("Enter valid credentials");
+        }
+        const user= await User.findOne({email:emailid})
+        if(!user){
+            throw new Error("No such user found")
+        }
+        const passwordCheck= await bcrypt.compare(password,user.password);
+        if(!passwordCheck){
+            throw new Error("Enter valid credentials");
+        }
+        return res.send("User logged in successfully")
+    }
+    catch(err){
+        res.status(404).send(err.message);
     }
 })
 

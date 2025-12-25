@@ -9,6 +9,7 @@ const userSchema= new mongoose.Schema({
     },
     lastName : {
         type: String,
+        required : true,
         maxLength : 50,
     },
     email : {
@@ -39,10 +40,12 @@ const userSchema= new mongoose.Schema({
     password : {
         type : String,
         required : true,
-        minLength : 8,
-        maxLength : 20,
         unique : true,
-        trim : true,
+        validate(v){
+            if(!validator.isStrongPassword(v)){
+                throw new error("Please enter a Stronger Password")
+            }
+        }
     },
     about : {
         type : String,
