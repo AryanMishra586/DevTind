@@ -16,6 +16,7 @@ const jwt = require("jsonwebtoken");
 
 const cookieParser = require("cookie-parser")
 
+const {userauth} = require("./middlewares/auth.js")
 
 app.use(express.json())
 app.use(cookieParser())
@@ -43,103 +44,6 @@ app.post("/signup", async (req,res)=>{
     }
 })
 
-app.get("/getUser",async (req,res)=>{
-    try{
-        const user = await User.find({
-            email : req.body.email
-        })
-        if(user.length){
-            res.send(user)
-        }
-        else{
-            res.status(404).send("User not found")
-        }
-    }
-    catch(err){
-        res.status(500).send("Something went wrong")
-    }
-})
-
-app.get("/getUserById",async (req,res)=>{
-    try{
-        const user = await User.find({
-            _id : req.body._id
-        })
-        if(user.length){
-            res.send(user)
-        }
-        else{
-            res.status(404).send("User not found")
-        }
-    }
-    catch(err){
-        res.status(500).send("Something went wrong")
-    }
-})
-
-app.get("/feed", async (req,res)=>{
-    try{
-        const users = await User.find({})
-        if(users.length){
-            res.send(users)
-        }
-        else{
-            res.status(404).send("No User found")
-        }
-    }
-    catch(err){
-        res.status(500).send("Something went wrong")
-    }
-})
-
-app.patch("/updateUser", async(req,res)=>{
-    try{
-        const updateAllowed =["age","gender","about","userid","skills"]
-        for(const k of Object.keys(req.body)){
-            if(!updateAllowed.includes(k)){
-                return res.status(405).send("Update to given filed is not allowed "+k);
-            }
-        }
-        let bd=req.body
-        if(!skillsCheck(req,bd)){
-            return res.status(400).send("Too many skills added")
-        }
-        const userid=req.body.userid;
-        await User.findByIdAndUpdate(userid,bd,{runValidators : true})
-        const ch=await User.findById(userid)
-        return res.send(ch);
-    }
-    catch(err){
-        res.status(500).send("Something went wrong "+ err.message)
-    }
-})
-
-app.patch("/updateUserByEmail", async(req,res)=>{
-    try{
-        const updateAllowed =["age","gender","about","email","skills"]
-        for(const k of Object.keys(req.body)){
-            if(!updateAllowed.includes(k)){
-                return res.status(405).send("Update to given filed is not allowed "+k);
-            }
-        }
-        let bd=req.body
-        if(!skillsCheck(req,bd)){
-            return res.status(400).send("Too many skills added")
-        }
-
-        const updatedUser= await User.findOneAndUpdate({email : req.body.email},bd,{new : true, runValidators : true})
-
-        if(updatedUser){
-            res.send(updatedUser)
-        }
-        else{
-            res.status(404).send("User not found")
-        }
-    }
-    catch(err){
-        res.status(500).send("Something went wrong "+ err.message)
-    }
-})
 
 app.post("/login", async (req,res)=>{
     try{
@@ -155,8 +59,8 @@ app.post("/login", async (req,res)=>{
         if(!passwordCheck){
             throw new Error("Enter valid credentials");
         }
-        const token = jwt.sign({userid : user._id},"MeraNaamAryan@123")
-        res.cookie("token",token);
+        const token = jwt.sign({userid : user._id},"MeraNaamAryan@123",{expiresIn:'1d'})
+        res.cookie("token",token,{expires: new Date(Date.now()+900000)});
         return res.send("User logged in successfully")
     }
     catch(err){
@@ -164,16 +68,9 @@ app.post("/login", async (req,res)=>{
     }
 })
 
-app.get("/profile", async(req,res)=>{
+app.get("/profile",userauth,async(req,res)=>{
     try{
-        const cookies= req.cookies;
-        if(!cookies){
-            throw new Error("Invalid cookie");
-        }
-        const {token}=cookies;
-        const decoded = jwt.verify(token,"MeraNaamAryan@123")
-        const {userid} = decoded;
-        const user= await User.findById(userid);
+        const user= req.user;
         res.send(user)
     }
     catch(err){
