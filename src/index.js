@@ -6,15 +6,17 @@ const {connectDb}= require("./config/database.js")
 
 const cookieParser = require("cookie-parser")
 
-const profileRouter = require("./router/profile.js")
-const authRouter = require("./router/auth.js")
-const requestRouter = require("./router/request.js")
+const {profileRouter} = require("./router/profile.js")
+const {authRouter} = require("./router/auth.js")
+const {requestRouter} = require("./router/request.js")
+const {userRouter} = require("./router/user.js")
 
 app.use(express.json())
 app.use(cookieParser())
 app.use(authRouter)
 app.use(profileRouter)
 app.use(requestRouter)
+app.use(userRouter)
 
 
 

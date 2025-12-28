@@ -65,6 +65,6 @@ profileRouter.patch("/profile/password",userauth, async(req,res)=>{
     }
 })
 
-module.exports = profileRouter;
+module.exports = {profileRouter};
 
 

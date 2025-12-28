@@ -83,4 +83,4 @@ requestRouter.post("/request/review/:status/:requestId", userauth , async(req,re
 })
 
 
-module.exports = requestRouter;
+module.exports = {requestRouter};
