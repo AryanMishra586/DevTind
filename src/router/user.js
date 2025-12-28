@@ -36,7 +36,6 @@ userRouter.get("/user/connections",userauth, async(req,res)=>{
                 {fromUserId : curUser._id, status : "accepted"}
             ]
         }).populate("fromUserId",allowedFields).populate("toUserId",allowedFields)
-        console.log(connections)
         const data = connections.map((row)=>{
 
             if(row.fromUserId.equals(curUser._id)){
@@ -52,5 +51,34 @@ userRouter.get("/user/connections",userauth, async(req,res)=>{
 
 })
 
+userRouter.get("/user/feed", userauth, async(req,res)=>{
+    try{
+        const curUser=req.user;
+        const connections = await ConnectionRequest.find({
+            $or : [
+                {toUserId:curUser._id},
+                {fromUserId :curUser._id}
+            ]
+        })
+        const connectedUsers = connections.map((row)=>{
+            if(row.fromUserId.equals(curUser._id)){
+                return row.toUserId;
+            }
+            return row.fromUserId;
+        })
+        connectedUsers.push(curUser._id);
+        const users = await User.find({
+            _id : { $nin : connectedUsers }
+        })
+        res.json({
+            message : "Here are the users you might be intrested in",
+            data: users
+        })
+    }
+    catch(err){
+        res.status(400).send(err.message);
+    }
+
+})
 
 module.exports = {userRouter};
