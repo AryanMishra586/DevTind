@@ -54,7 +54,33 @@ requestRouter.post("/request/send/:status/:toUserId", userauth, async(req,res) =
 
 })
 
+requestRouter.post("/request/review/:status/:requestId", userauth , async(req,res)=>{
+    try{
+        const toUserId = req.user._id;
+        const {status,requestId} = req.params;
 
+        if(!["accepted","rejected"].includes(status)){
+            throw new Error(`${status} is not a valid status field`)
+        }
+        const doesConnectionExist = await ConnectionRequest.findOne({
+            toUserId: toUserId,
+            status : "intrested",
+            _id : requestId
+        })
+        if(!doesConnectionExist){
+            throw new Error("No such connection request found");
+        }
+        doesConnectionExist.status = status;
+        const data = await doesConnectionExist.save();
+        res.json({
+            message : "Connection status was updated to "+ status,
+            data
+        })
+    }
+    catch(err){
+        res.status(400).send(err.message);
+    }
+})
 
 
 module.exports = requestRouter;
