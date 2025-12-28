@@ -31,7 +31,7 @@ requestRouter.post("/request/send/:status/:toUserId", userauth, async(req,res) =
             ]
         })
         if(doesConnectionAlreadyExist){
-            throw new Error("Connect Request Already exist");
+            throw new Error("Connect Request Already exist with the status of "+doesConnectionAlreadyExist.status);
         }
         const newConnection = new ConnectionRequest({
             fromUserId,
