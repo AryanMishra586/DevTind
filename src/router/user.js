@@ -54,6 +54,12 @@ userRouter.get("/user/connections",userauth, async(req,res)=>{
 userRouter.get("/user/feed", userauth, async(req,res)=>{
     try{
         const curUser=req.user;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        if(limit >50){
+            limit=50;
+        }
         const connections = await ConnectionRequest.find({
             $or : [
                 {toUserId:curUser._id},
@@ -69,7 +75,7 @@ userRouter.get("/user/feed", userauth, async(req,res)=>{
         connectedUsers.push(curUser._id);
         const users = await User.find({
             _id : { $nin : connectedUsers }
-        })
+        }).select("-password -email -createdAt -updatedAt -__v").skip(skip).limit(limit);
         res.json({
             message : "Here are the users you might be intrested in",
             data: users
